@@ -19,23 +19,23 @@ def main():
 
     cam_settings = dict(resolution=(1024, 768), framerate=15)
     prev_settings = dict(alpha=200)
-
-    mode = "video"
-    if len(sys.argv) > 1 and sys.argv[1] in cam_settings.keys():
-        mode = sys.argv[1]
-
     camera_function = dict(video=video, photo=photo)
     file_ext = dict(video="h264", photo="jpg")
+
+    mode = "video"
+    if len(sys.argv) > 1 and sys.argv[1] in camera_function.keys():
+        mode = sys.argv[1]
+
     filename = f"/home/pi/Desktop/{mode}-{time()}.{file_ext[mode]}"
 
     with PiCamera(**cam_settings) as camera:
         camera.rotation = 180
-        camera.start_preview(**prev_settings)
-        sleep(2)
 
-        output = camera_function[mode](camera, filename=filename)
-        print(f"Saved output to: {output}")
-        camera.stop_preview()
+        with camera.start_preview(**prev_settings) as preview:
+            sleep(2)
+
+            output = camera_function[mode](camera, filename=filename)
+            print(f"Saved output to: {output}")
 
 
 if __name__ == "__main__":
