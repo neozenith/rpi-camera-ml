@@ -1,6 +1,9 @@
 #! /usr/bin/bash
 __WDIR=$(pwd)
 
+sudo apt-get install libgtk2.0-dev pkg-config qt4-default -y
+
+PIP="sudo python3 -m pip"
 DEPS=$HOME/.deps 
 
 mkdir -pv $DEPS 
@@ -13,9 +16,10 @@ git checkout master
 git reset --hard
 git clean -df
 git pull
-# Ignore QT dependency
-export ENABLE_HEADLESS=1 
+
 python3 setup.py build
 sudo python3 setup.py install
+
+$PIP install imutils
 
 cd $__WDIR 
