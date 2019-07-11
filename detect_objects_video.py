@@ -67,7 +67,7 @@ while True:
     frame = imutils.resize(frame, width=scale_width)
 
     # grab the frame dimensions and convert it to a blob
-    (h, w) = frame.shape[:2]
+    (_h, _w) = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(frame, 1.0, (scale_width, scale_width), (104.0, 177.0, 123.0))
 
     # pass the blob through the network and obtain the detections and
@@ -91,23 +91,28 @@ while True:
             scores = detection[5:]
             class_id = np.argmax(scores)
             confidence = scores[class_id]
-            if confidence > 0.5:
-                center_x = int(detection[0] * Width)
-                center_y = int(detection[1] * Height)
-                w = int(detection[2] * Width)
-                h = int(detection[3] * Height)
-                x = center_x - w / 2
-                y = center_y - h / 2
+            if confidence > 0.99 and all([x < 2.0 for x in detection[:4]]):
+
+                print(detection[:4])
+                center_x = int(detection[0] * _w)
+                center_y = int(detection[1] * _h)
+                w = int(detection[2] * _w)
+                h = int(detection[3] * _h)
+                x = int(center_x - w / 2)
+                y = int(center_y - h / 2)
                 class_ids.append(class_id)
                 confidences.append(float(confidence))
                 boxes.append([x, y, w, h])
+                # draw_bounding_box(frame, class_id, float(confidence), round(x), round(y), round(x + w), round(y + h))
 
+    print(boxes)
+    print(confidences)
     indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
 
     # go through the detections remaining
     # after nms and draw bounding box
-    for ind in indices:
-        i = ind[0]
+    for i in indices:
+        i = i[0]
         box = boxes[i]
         x = box[0]
         y = box[1]
@@ -116,6 +121,7 @@ while True:
 
         draw_bounding_box(frame, class_ids[i], confidences[i], round(x), round(y), round(x + w), round(y + h))
 
+    time.sleep(5.0)
     # show the output frame
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(5) & 0xFF
