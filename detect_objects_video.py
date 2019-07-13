@@ -33,8 +33,12 @@ def draw_bounding_box(img, class_id, confidence, x, y, x_plus_w, y_plus_h):
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-c", "--config", required=True, help="path to yolo config file")
-ap.add_argument("-w", "--weights", required=True, help="path to yolo pre-trained weights")
-ap.add_argument("-cl", "--classes", required=True, help="path to text file containing class names")
+ap.add_argument(
+    "-w", "--weights", required=True, help="path to yolo pre-trained weights"
+)
+ap.add_argument(
+    "-cl", "--classes", required=True, help="path to text file containing class names"
+)
 args = vars(ap.parse_args())
 
 print(args)
@@ -54,28 +58,34 @@ net = cv2.dnn.readNet(args["weights"], args["config"])
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
-# vs = VideoStream(src=0).start()
-vs = VideoStream(usePiCamera=True).start()
+vs = VideoStream(src=0).start()
+# vs = VideoStream(usePiCamera=True).start()
 time.sleep(2.0)
 
 # loop over the frames from the video stream
 while True:
     # grab the frame from the threaded video stream and resize it
     # to have a maximum width of 400 pixels
+    start = time.time()
     scale_width = 416
     frame = vs.read()
+    print(f"RAW: {time.time() - start}")
     frame = imutils.resize(frame, width=scale_width)
 
     # grab the frame dimensions and convert it to a blob
     (_h, _w) = frame.shape[:2]
-    blob = cv2.dnn.blobFromImage(frame, 1.0, (scale_width, scale_width), (104.0, 177.0, 123.0))
+    blob = cv2.dnn.blobFromImage(
+        frame, 1.0, (scale_width, scale_width), (104.0, 177.0, 123.0)
+    )
 
     # pass the blob through the network and obtain the detections and
     # predictions
     net.setInput(blob)
 
+    print(f"SCALED: {time.time() - start}")
     outs = net.forward(get_output_layers(net))
 
+    print(f"NET: {time.time() - start}")
     # initialization
     class_ids = []
     confidences = []
@@ -91,9 +101,9 @@ while True:
             scores = detection[5:]
             class_id = np.argmax(scores)
             confidence = scores[class_id]
-            if confidence > 0.99 and all([x < 2.0 for x in detection[:4]]):
+            if confidence > 0.5 and all([x < 2.0 for x in detection[:4]]):
 
-                print(detection[:4])
+                #  print(detection[:4])
                 center_x = int(detection[0] * _w)
                 center_y = int(detection[1] * _h)
                 w = int(detection[2] * _w)
@@ -105,8 +115,9 @@ while True:
                 boxes.append([x, y, w, h])
                 # draw_bounding_box(frame, class_id, float(confidence), round(x), round(y), round(x + w), round(y + h))
 
-    print(boxes)
-    print(confidences)
+    print(f"BOXES: {time.time() - start}")
+    #  print(boxes)
+    #  print(confidences)
     indices = cv2.dnn.NMSBoxes(boxes, confidences, conf_threshold, nms_threshold)
 
     # go through the detections remaining
@@ -119,12 +130,22 @@ while True:
         w = box[2]
         h = box[3]
 
-        draw_bounding_box(frame, class_ids[i], confidences[i], round(x), round(y), round(x + w), round(y + h))
+        draw_bounding_box(
+            frame,
+            class_ids[i],
+            confidences[i],
+            round(x),
+            round(y),
+            round(x + w),
+            round(y + h),
+        )
 
-    time.sleep(5.0)
+    print(f"BOUND: {time.time() - start}")
+    # time.sleep(5.0)
     # show the output frame
     cv2.imshow("Frame", frame)
-    key = cv2.waitKey(5) & 0xFF
+    print(f"FRAME: {time.time() - start}")
+    key = cv2.waitKey(1) & 0xFF
 
     # if the `q` key was pressed, break from the loop
     if key == ord("q"):
